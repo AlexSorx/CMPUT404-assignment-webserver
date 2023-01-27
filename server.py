@@ -34,22 +34,8 @@ from numpy import byte
 
 class MyWebServer(socketserver.BaseRequestHandler):
     
-    # Handles 301 incorrect path - path does not contain '.' and does not end in '/'
-    def handle_301(self, newPath):
-        response ="HTTP/1.1 301 Permanently Moved \r\nLocation"
+   
     
-        response+= newPath +"\n\n"
-        self.request.sendall(bytearray(response, 'utf-8'))
-
-    # Handles 404 error ie: invalid path request
-    def handle_404(self):
-        response = "HTTP/1.1 404 Not Found \r\n"
-        self.request.sendall(bytearray(response, 'utf-8'))
-    # Handles 405 error ie: not GET request
-    def handle_405(self):
-        response = "HTTP/1.1 405 Method Not Allowed \r\n"
-        self.request.sendall(bytearray(response, 'utf-8'))
-
     def handle(self):
         self.data = self.request.recv(1024).strip()
         print ("Got a request of: %s\n" % self.data)
@@ -69,8 +55,17 @@ class MyWebServer(socketserver.BaseRequestHandler):
         self.request_path = self.splitdata[0].split()[1]
 
        
+        
+        # Conditions for a 405
+        if request.lower()!= 'get' or len(lines)==0 or len(request)==0:
+            self.handle_405()
+        
+        # Conditions for a 404
+        elif '/..' in fpath or not path.exists('www' +fpath):
+            self.handle_404()
+
         # See if we are working with a file and operate accordingly
-        if path.isfile('www'+ fpath):
+        elif path.isfile('www'+ fpath):
 
             # Identify file type
             if fpath.endswith('.html'):
@@ -110,34 +105,49 @@ class MyWebServer(socketserver.BaseRequestHandler):
             response += relocatedLocation + "\n\n"
             self.request.sendall(bytearray(response,'utf-8'))
 
-        # Conditions for a 405
-        elif request.lower()!= 'get' or len(lines)==0 or len(request)==0:
-            self.handle_405()
-
-
-            
-        # Conditions for a 404
-        elif '/..' in fpath or not path.exists('www' +fpath):
-            self.handle_404()
-        
     # returns file type html/css 
     def get_file_type(self, path):
         return path.split('.')[-1]
-
-    """""
-    # 200 Index handler not used
+        
+    # 200 Index handler 
     def handle_200_index(self, fpath):
             fpath+= 'index.html'
             response = "HTTP/1.1 200 OK\r\nContent-Type: text/html\n\n"
             response += open('./www' + fpath , 'r').read()
             
             self.request.sendall(bytearray(response,'utf-8'))
-    """""
 
+    # Handles 200 OK response formats according to file type html/css
+    def handle_200(self, fpath):
+        # determine if css or html file type
+        if fpath[-4:] == '.css':
+            response ="HTTP/1.1 200 OK\r\nContent-Type: text/css\n\n"
+            f = open('./www'+ fpath, 'r').read()
+            response+=f
+            self.request.sendall(bytearray(response,'utf-8'))
+        elif fpath[-4:] == '.html':
+            response = "HTTP/1.1 200 OK\r\nContent-Type: text/html\n\n"
+            f = open('./www'+fpath , 'r').read()
+            response+=f
+            self.request.sendall(bytearray(response,'utf-8'))
+        
+    # Handles 301 incorrect path - path does not contain '.' and does not end in '/'
+    def handle_301(self, newPath):
+        response ="HTTP/1.1 301 Permanently Moved \r\nLocation"
+    
+        response+= newPath +"\n\n"
+        self.request.sendall(bytearray(response, 'utf-8'))
+
+    # Handles 404 error ie: invalid path request
+    def handle_404(self):
+        response = "HTTP/1.1 404 Not Found \r\n"
+        self.request.sendall(bytearray(response, 'utf-8'))
+    # Handles 405 error ie: not GET request
+    def handle_405(self):
+        response = "HTTP/1.1 405 Method Not Allowed \r\n"
+        self.request.sendall(bytearray(response, 'utf-8'))
 
     
-       
-
 if __name__ == "__main__":
     HOST, PORT = "localhost", 8080
 
