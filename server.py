@@ -34,26 +34,6 @@ from numpy import byte
 
 class MyWebServer(socketserver.BaseRequestHandler):
     
-   
-    # Handles 200 OK response formats according to file type html/css
-    def handle_200(self, fpath):
-        # determine if css or html file type
-        if fpath[-4:] == '.css':
-            response ="HTTP/1.1 200 OK\r\nContent-Type: text/css\n\n"
-            f = open('./www'+ fpath, 'r').read()
-            response+=f
-            self.request.sendall(bytearray(response,'utf-8'))
-        elif fpath[-4:] == '.html':
-            response = "HTTP/1.1 200 OK\r\nContent-Type: text/html\n\n"
-            f = open('./www'+fpath , 'r').read()
-            response+=f
-            self.request.sendall(bytearray(response,'utf-8'))
-        
-
-        
-        
-        
-
     # Handles 301 incorrect path - path does not contain '.' and does not end in '/'
     def handle_301(self, newPath):
         response ="HTTP/1.1 301 Permanently Moved \r\nLocation"
